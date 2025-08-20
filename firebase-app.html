@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>步数追踪 - 云版</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-height: 100vh;
+        }
+
+        /* Header styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #username {
+            font-weight: 500;
+            color: #555;
+        }
+
+        /* Button styles */
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        /* Input section */
+        .input-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group label {
+            font-weight: 500;
+            min-width: 80px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        /* Tab styles */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: #4CAF50;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #4CAF50;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 10px 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #444;
+        }
+
+        /* Ranking styles */
+        .ranking-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .rank-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .rank-position {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ddd;
+            color: #666;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .position-1 {
+            background-color: #FFD700;
+            color: #333;
+        }
+
+        .position-2 {
+            background-color: #C0C0C0;
+            color: #333;
+        }
+
+        .position-3 {
+            background-color: #CD7F32;
+            color: #fff;
+        }
+
+        .rank-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .rank-steps {
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        .rank-trend {
+            margin-left: 8px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .trend-up {
+            color: #4CAF50;
+        }
+
+        .trend-down {
+            color: #F44336;
+        }
+
+        .trend-neutral {
+            color: #9E9E9E;
+        }
+
+        /* Chart container */
+        .chart-container {
+            height: 400px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+
+        .modal .input-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .modal .input-group label {
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .modal .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        /* Activity level indicator */
+        .activity-level {
+            margin-left: 10px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 600px) {
+            .app-container {
+                padding: 15px;
+                border-radius: 0;
+            }
+            
+            header h1 {
+                font-size: 20px;
+            }
+            
+            .tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+        }
+        
+        /* Firebase status indicator */
+        .firebase-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .status-connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .status-disconnected {
+            background-color: #F44336;
+            color: white;
+        }
+        
+        .github-link {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .github-link a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        
+        .github-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>步数追踪 <span class="firebase-status" id="firebase-status">连接中...</span></h1>
+            <div class="user-info">
+                <span id="username">用户名</span>
+                <button id="logout-btn" class="btn btn-small">退出</button>
+            </div>
+        </header>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <label for="step-count">今日步数:</label>
+                <input type="number" id="step-count" placeholder="输入步数">
+                <button id="submit-steps" class="btn">提交</button>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="today">今日</button>
+            <button class="tab-btn" data-tab="weekly">本周</button>
+            <button class="tab-btn" data-tab="monthly">本月</button>
+        </div>
+        
+        <div class="tab-content active" id="today">
+            <h2>今日排名</h2>
+            <div class="ranking-container">
+                <!-- Rankings will be populated here -->
+            </div>
+        </div>
+        
+        <div class="tab-content" id="weekly">
+            <h2>本周趋势</h2>
+            <div class="chart-container">
+                <canvas id="weekly-chart"></canvas>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="monthly">
+            <h2>本月平均</h2>
+            <div class="chart-container">
+                <canvas id="monthly-chart"></canvas>
+            </div>
+        </div>
+        
+        <div class="github-link">
+            <p>将此应用部署到GitHub Pages，让所有人都能使用: <a href="https://github.com/new" target="_blank">创建GitHub仓库</a></p>
+        </div>
+    </div>
+    
+    <!-- Login Modal -->
+    <div class="modal" id="login-modal">
+        <div class="modal-content">
+            <h2>登录</h2>
+            <div class="input-group">
+                <label for="login-username">用户名:</label>
+                <input type="text" id="login-username">
+            </div>
+            <div class="input-group">
+                <label for="login-password">密码:</label>
+                <input type="password" id="login-password">
+            </div>
+            <div class="button-group">
+                <button id="login-btn" class="btn">登录</button>
+                <button id="register-btn" class="btn btn-secondary">注册</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Group Modal -->
+    <div class="modal" id="group-modal">
+        <div class="modal-content">
+            <h2>加入或创建小组</h2>
+            <div class="input-group">
+                <label for="group-code">小组代码:</label>
+                <input type="text" id="group-code">
+            </div>
+            <div class="button-group">
+                <button id="join-group-btn" class="btn">加入小组</button>
+                <button id="create-group-btn" class="btn btn-secondary">创建新小组</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chart.js and plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <script>
+        // Register Chart.js plugins
+        Chart.register(ChartDataLabels);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Chart.js plugins:", Chart.registry.plugins);
+            
+            // Register annotation plugin if available
+            if (window.ChartAnnotation) {
+                Chart.register(window.ChartAnnotation);
+                console.log("Annotation plugin registered");
+            } else {
+                console.error("Annotation plugin not found");
+            }
+            
+            // Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyBXH7JgXl7z8vHNMBLGJxs9TfE4XmPfgpY",
+                authDomain: "step-tracker-app-demo.firebaseapp.com",
+                databaseURL: "https://step-tracker-app-demo-default-rtdb.firebaseio.com",
+                projectId: "step-tracker-app-demo",
+                storageBucket: "step-tracker-app-demo.appspot.com",
+                messagingSenderId: "123456789012",
+                appId: "1:123456789012:web:abcdef1234567890"
+            };
+            
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+            
+            // Firebase references
+            const database = firebase.database();
+            const usersRef = database.ref('users');
+            const groupsRef = database.ref('groups');
+            const stepDataRef = database.ref('stepData');
+            
+            // Firebase connection status
+            const connectedRef = database.ref(".info/connected");
+            connectedRef.on("value", (snap) => {
+                if (snap.val() === true) {
+                    document.getElementById("firebase-status").textContent = "已连接";
+                    document.getElementById("firebase-status").className = "firebase-status status-connected";
+                } else {
+                    document.getElementById("firebase-status").textContent = "未连接";
+                    document.getElementById("firebase-status").className = "firebase-status status-disconnected";
+                }
+            });
+            
+            // DOM Elements
+            const loginModal = document.getElementById('login-modal');
+            const groupModal = document.getElementById('group-modal');
+            const usernameDisplay = document.getElementById('username');
+            const stepInput = document.getElementById('step-count');
+            const submitStepsBtn = document.getElementById('submit-steps');
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const rankingContainer = document.querySelector('.ranking-container');
+            const loginBtn = document.getElementById('login-btn');
+            const registerBtn = document.getElementById('register-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const joinGroupBtn = document.getElementById('join-group-btn');
+            const createGroupBtn = document.getElementById('create-group-btn');
+
+            // App state
+            let currentUser = null;
+            let currentGroup = null;
+            let users = [];
+            let groups = [];
+            let stepData = [];
+            
+            // Initialize the app
+            async function init() {
+                console.log("Initializing app...");
+                
+                // Check if data exists in Firebase
+                await initializeDatabase();
+                
+                // Show login modal if no user is logged in
+                if (!currentUser) {
+                    showLoginModal();
+                }
+                
+                // Add event listeners
+                if (submitStepsBtn) {
+                    submitStepsBtn.addEventListener('click', updateSteps);
+                }
+                
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        switchTab(button.dataset.tab);
+                    });
+                });
+                
+                if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+                if (registerBtn) registerBtn.addEventListener('click', handleRegister);
+                if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+                if (joinGroupBtn) joinGroupBtn.addEventListener('click', handleJoinGroup);
+                if (createGroupBtn) createGroupBtn.addEventListener('click', handleCreateGroup);
+                
+                // Listen for data changes
+                stepDataRef.on('value', snapshot => {
+                    stepData = snapshot.val() || [];
+                    updateDashboard();
+                });
+            }
+            
+            // Initialize database with sample data if empty
+            async function initializeDatabase() {
+                // Check if users exist
+                const usersSnapshot = await usersRef.once('value');
+                if (!usersSnapshot.exists()) {
+                    // Add sample users
+                    await usersRef.set([
+                        { id: 1, username: '冉启兵', password: 'pass1' },
+                        { id: 2, username: '冉理', password: 'pass2' },
+                        { id: 3, username: '冉荣', password: 'pass3' }
+                    ]);
+                }
+                
+                // Check if groups exist
+                const groupsSnapshot = await groupsRef.once('value');
+                if (!groupsSnapshot.exists()) {
+                    // Add sample group
+                    await groupsRef.set([
+                        { 
+                            id: 1, 
+                            name: '步数小组', 
+                            code: 'STEP123',
+                            members: [1, 2, 3]
+                        }
+                    ]);
+                }
+                
+                // Check if step data exists
+                const stepDataSnapshot = await stepDataRef.once('value');
+                if (!stepDataSnapshot.exists()) {
+                    // Add sample step data (just a few recent entries for each user)
+                    const sampleData = [];
+                    
+                    // Generate data for the past 30 days
+                    const today = new Date();
+                    
+                    for (let i = 0; i < 30; i++) {
+                        const date = new Date();
+                        date.setDate(today.getDate() - i);
+                        const dateStr = date.toISOString().split('T')[0];
+                        
+                        // User 1 data
+                        sampleData.push({
+                            userId: 1,
+                            date: dateStr,
+                            steps: Math.floor(Math.random() * 15000) + 5000
+                        });
+                        
+                        // User 2 data
+                        sampleData.push({
+                            userId: 2,
+                            date: dateStr,
+                            steps: Math.floor(Math.random() * 20000) + 5000
+                        });
+                        
+                        // User 3 data
+                        sampleData.push({
+                            userId: 3,
+                            date: dateStr,
+                            steps: Math.floor(Math.random() * 25000) + 5000
+                        });
+                    }
+                    
+                    await stepDataRef.set(sampleData);
+                }
+                
+                // Load data from Firebase
+                await loadData();
+            }
+            
+            // Load data from Firebase
+            async function loadData() {
+                const usersSnapshot = await usersRef.once('value');
+                users = usersSnapshot.val() || [];
+                
+                const groupsSnapshot = await groupsRef.once('value');
+                groups = groupsSnapshot.val() || [];
+                
+                const stepDataSnapshot = await stepDataRef.once('value');
+                stepData = stepDataSnapshot.val() || [];
+                
+                // Auto-login with the first user for demo purposes
+                currentUser = users[0];
+                currentGroup = groups[0];
+                
+                if (usernameDisplay && currentUser) {
+                    usernameDisplay.textContent = currentUser.username;
+                }
+                
+                // Update the dashboard
+                updateDashboard();
+            }
+
+            // Show login modal
+            function showLoginModal() {
+                loginModal.classList.add('active');
+            }
+
+            // Show group modal
+            function showGroupModal() {
+                groupModal.classList.add('active');
+                loginModal.classList.remove('active');
+            }
+
+            // Handle login
+            async function handleLogin() {
+                const username = document.getElementById('login-username').value;
+                const password = document.getElementById('login-password').value;
+                
+                const usersSnapshot = await usersRef.once('value');
+                const allUsers = usersSnapshot.val() || [];
+                
+                const user = allUsers.find(u => u.username === username && u.password === password);
+                
+                if (user) {
+                    currentUser = user;
+                    usernameDisplay.textContent = user.username;
+                    loginModal.classList.remove('active');
+                    
+                    // Check if user is in a group
+                    const groupsSnapshot = await groupsRef.once('value');
+                    const allGroups = groupsSnapshot.val() || [];
+                    
+                    const userGroup = allGroups.find(g => g.members.includes(user.id));
+                    if (userGroup) {
+                        currentGroup = userGroup;
+                        updateDashboard();
+                    } else {
+                        showGroupModal();
+                    }
+                } else {
+                    alert('用户名或密码错误');
+                }
+            }
+
+            // Handle register
+            async function handleRegister() {
+                const username = document.getElementById('login-username').value;
+                const password = document.getElementById('login-password').value;
+                
+                if (username && password) {
+                    const usersSnapshot = await usersRef.once('value');
+                    const allUsers = usersSnapshot.val() || [];
+                    
+                    // Check if username already exists
+                    if (allUsers.some(u => u.username === username)) {
+                        alert('用户名已存在');
+                        return;
+                    }
+                    
+                    const newId = allUsers.length + 1;
+                    const newUser = { id: newId, username, password };
+                    allUsers.push(newUser);
+                    
+                    await usersRef.set(allUsers);
+                    
+                    currentUser = newUser;
+                    usernameDisplay.textContent = newUser.username;
+                    loginModal.classList.remove('active');
+                    showGroupModal();
+                } else {
+                    alert('请输入用户名和密码');
+                }
+            }
+
+            // Handle logout
+            function handleLogout() {
+                currentUser = null;
+                currentGroup = null;
+                showLoginModal();
+            }
+
+            // Handle join group
+            async function handleJoinGroup() {
+                const groupCode = document.getElementById('group-code').value;
+                
+                const groupsSnapshot = await groupsRef.once('value');
+                const allGroups = groupsSnapshot.val() || [];
+                
+                const groupIndex = allGroups.findIndex(g => g.code === groupCode);
+                if (groupIndex !== -1) {
+                    const group = allGroups[groupIndex];
+                    if (!group.members.includes(currentUser.id)) {
+                        group.members.push(currentUser.id);
+                        await groupsRef.set(allGroups);
+                    }
+                    
+                    currentGroup = group;
+                    groupModal.classList.remove('active');
+                    updateDashboard();
+                } else {
+                    alert('小组代码无效');
+                }
+            }
+
+            // Handle create group
+            async function handleCreateGroup() {
+                const groupsSnapshot = await groupsRef.once('value');
+                const allGroups = groupsSnapshot.val() || [];
+                
+                const newGroupId = allGroups.length + 1;
+                const newGroupCode = 'G' + Math.floor(1000 + Math.random() * 9000);
+                
+                const newGroup = {
+                    id: newGroupId,
+                    name: '小组 ' + newGroupId,
+                    code: newGroupCode,
+                    members: [currentUser.id]
+                };
+                
+                allGroups.push(newGroup);
+                await groupsRef.set(allGroups);
+                
+                currentGroup = newGroup;
+                groupModal.classList.remove('active');
+                alert(`您的小组代码是: ${newGroupCode}`);
+                updateDashboard();
+            }
+
+            // Get activity level based on step count
+            function getActivityLevel(steps) {
+                if (steps < 5000) {
+                    return { level: '久坐不动型', color: '#FF5252' };
+                } else if (steps < 10000) {
+                    return { level: '轻度活动型', color: '#FFC107' };
+                } else if (steps <= 12500) {
+                    return { level: '活跃型', color: '#4CAF50' };
+                } else {
+                    return { level: '高度活跃型', color: '#2196F3' };
+                }
+            }
+
+            // Update steps
+            async function updateSteps() {
+                if (!currentUser) {
+                    alert('请先登录');
+                    showLoginModal();
+                    return;
+                }
+                
+                const steps = parseInt(stepInput.value);
+                
+                if (isNaN(steps) || steps < 0) {
+                    alert('请输入有效的步数');
+                    return;
+                }
+                
+                const today = new Date().toISOString().split('T')[0];
+                
+                const stepDataSnapshot = await stepDataRef.once('value');
+                const allStepData = stepDataSnapshot.val() || [];
+                
+                // Check if there's already an entry for today
+                const existingEntryIndex = allStepData.findIndex(
+                    entry => entry.userId === currentUser.id && entry.date === today
+                );
+                
+                if (existingEntryIndex !== -1) {
+                    allStepData[existingEntryIndex].steps = steps;
+                } else {
+                    allStepData.push({
+                        userId: currentUser.id,
+                        date: today,
+                        steps: steps
+                    });
+                }
+                
+                await stepDataRef.set(allStepData);
+                
+                // Get activity level
+                const activityInfo = getActivityLevel(steps);
+                
+                // Create activity level message
+                const message = `步数更新成功！\n\n活动水平: ${activityInfo.level}`;
+                
+                stepInput.value = '';
+                alert(message);
+            }
+
+            // Switch tab
+            function switchTab(tabId) {
+                tabButtons.forEach(button => {
+                    if (button.dataset.tab === tabId) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                });
+                
+                tabContents.forEach(content => {
+                    if (content.id === tabId) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                    }
+                });
+                
+                if (tabId === 'weekly') {
+                    renderWeeklyChart();
+                } else if (tabId === 'monthly') {
+                    renderMonthlyChart();
+                }
+            }
+
+            // Update dashboard
+            function updateDashboard() {
+                if (!currentUser || !currentGroup) return;
+                
+                renderRankings();
+                renderWeeklyChart();
+                renderMonthlyChart();
+            }
+
+            // Render rankings
+            function renderRankings() {
+                if (!currentGroup || !rankingContainer || !stepData.length) return;
+                
+                rankingContainer.innerHTML = '';
+                
+                // Get today's date in YYYY-MM-DD format
+                const today = new Date().toISOString().split('T')[0];
+                
+                // Get yesterday's date
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                
+                // Get today's steps for group members
+                const groupSteps = stepData
+                    .filter(entry => 
+                        currentGroup.members.includes(entry.userId) && 
+                        entry.date === today
+                    )
+                    .sort((a, b) => b.steps - a.steps);
+                
+                groupSteps.forEach((entry, index) => {
+                    const user = users.find(u => u.id === entry.userId);
+                    if (!user) return;
+                    
+                    // Get yesterday's steps for trend comparison
+                    const yesterdayEntry = stepData.find(e => 
+                        e.userId === entry.userId && e.date === yesterdayStr
+                    );
+                    
+                    const rankItem = document.createElement('div');
+                    rankItem.className = 'rank-item';
+                    
+                    const position = document.createElement('div');
+                    position.className = `rank-position position-${index + 1}`;
+                    position.textContent = index + 1;
+                    
+                    const name = document.createElement('div');
+                    name.className = 'rank-name';
+                    name.textContent = user.username;
+                    
+                    const stepsContainer = document.createElement('div');
+                    stepsContainer.style.display = 'flex';
+                    stepsContainer.style.alignItems = 'center';
+                    
+                    const steps = document.createElement('div');
+                    steps.className = 'rank-steps';
+                    steps.textContent = entry.steps.toLocaleString() + ' 步';
+                    
+                    // Add activity level indicator
+                    const activityInfo = getActivityLevel(entry.steps);
+                    const activityIndicator = document.createElement('div');
+                    activityIndicator.className = 'activity-level';
+                    activityIndicator.textContent = activityInfo.level;
+                    activityIndicator.style.color = activityInfo.color;
+                    activityIndicator.style.fontSize = '12px';
+                    activityIndicator.style.marginLeft = '8px';
+                    
+                    // Add trend indicator
+                    if (yesterdayEntry) {
+                        const trend = document.createElement('span');
+                        trend.className = 'rank-trend';
+                        
+                        const diff = entry.steps - yesterdayEntry.steps;
+                        if (diff > 0) {
+                            trend.textContent = `↑ ${diff.toLocaleString()}`;
+                            trend.classList.add('trend-up');
+                        } else if (diff < 0) {
+                            trend.textContent = `↓ ${Math.abs(diff).toLocaleString()}`;
+                            trend.classList.add('trend-down');
+                        } else {
+                            trend.textContent = '→';
+                            trend.classList.add('trend-neutral');
+                        }
+                        
+                        stepsContainer.appendChild(steps);
+                        stepsContainer.appendChild(trend);
+                    } else {
+                        stepsContainer.appendChild(steps);
+                    }
+                    
+                    rankItem.appendChild(position);
+                    rankItem.appendChild(name);
+                    rankItem.appendChild(stepsContainer);
+                    rankItem.appendChild(activityIndicator);
+                    
+                    rankingContainer.appendChild(rankItem);
+                });
+                
+                // Add placeholders for members with no steps today
+                currentGroup.members.forEach(memberId => {
+                    if (!groupSteps.some(entry => entry.userId === memberId)) {
+                        const user = users.find(u => u.id === memberId);
+                        if (!user) return;
+                        
+                        const rankItem = document.createElement('div');
+                        rankItem.className = 'rank-item';
+                        
+                        const position = document.createElement('div');
+                        position.className = 'rank-position';
+                        position.textContent = '-';
+                        
+                        const name = document.createElement('div');
+                        name.className = 'rank-name';
+                        name.textContent = user.username;
+                        
+                        const steps = document.createElement('div');
+                        steps.className = 'rank-steps';
+                        steps.textContent = '无数据';
+                        
+                        rankItem.appendChild(position);
+                        rankItem.appendChild(name);
+                        rankItem.appendChild(steps);
+                        
+                        rankingContainer.appendChild(rankItem);
+                    }
+                });
+            }
+
+            // Colors for charts
+            const backgroundColors = [
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(153, 102, 255, 0.7)',
+                'rgba(255, 159, 64, 0.7)'
+            ];
+
+            // Global chart instances
+            let weeklyChart = null;
+            let monthlyChart = null;
+
+            // Render weekly chart
+            function renderWeeklyChart() {
+                if (!currentGroup || !currentUser || !stepData.length) return;
+                
+                const weeklyChartCanvas = document.getElementById('weekly-chart');
+                if (!weeklyChartCanvas) return;
+                
+                // Clear previous chart if it exists
+                if (window.weeklyChart) {
+                    window.weeklyChart.destroy();
+                }
+                
+                // Get dates for the past 7 days
+                const dates = [];
+                const today = new Date();
+                
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(today.getDate() - i);
+                    dates.push(date.toISOString().split('T')[0]);
+                }
+                
+                // Format dates for display (e.g., "Mon", "Tue", etc.)
+                const formattedDates = dates.map(date => {
+                    const day = new Date(date).getDay();
+                    const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+                    return dayNames[day];
+                });
+                
+                // Create datasets for each group member
+                const datasets = [];
+                
+                currentGroup.members.forEach((memberId, index) => {
+                    const user = users.find(u => u.id === memberId);
+                    if (!user) return;
+                    
+                    const color = backgroundColors[index % backgroundColors.length];
+                    
+                    // Get step data for this user for the past 7 days
+                    const userData = dates.map(date => {
+                        const entry = stepData.find(e => e.userId === memberId && e.date === date);
+                        return entry ? entry.steps : 0;
+                    });
+                    
+                    datasets.push({
+                        label: user.username,
+                        data: userData,
+                        borderColor: color.replace('0.7', '1'),
+                        backgroundColor: color,
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 0, // Remove point markers
+                        borderWidth: 3
+                    });
+                });
+                
+                // Create chart
+                window.weeklyChart = new Chart(weeklyChartCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: formattedDates,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(200, 200, 200, 0.2)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value >= 1000000) {
+                                            return (value / 1000000).toFixed(1) + 'M';
+                                        } else if (value >= 1000) {
+                                            return (value / 1000).toFixed(0) + 'K';
+                                        }
+                                        return value;
+                                    },
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    boxWidth: 12,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.dataset.label || '';
+                                        const value = context.parsed.y;
+                                        return `${label}: ${value.toLocaleString()} 步`;
+                                    }
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    line1: {
+                                        type: 'line',
+                                        yMin: 10000,
+                                        yMax: 10000,
+                                        borderColor: 'rgba(128, 128, 128, 0.7)',
+                                        borderWidth: 2,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            enabled: true,
+                                            content: '10,000 步',
+                                            position: 'end',
+                                            backgroundColor: 'rgba(128, 128, 128, 0.7)',
+                                            font: {
+                                                size: 12
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Render monthly chart
+            function renderMonthlyChart() {
+                if (!currentGroup || !currentUser || !stepData.length) return;
+                
+                const monthlyChartCanvas = document.getElementById('monthly-chart');
+                if (!monthlyChartCanvas) return;
+                
+                // Clear previous chart if it exists
+                if (window.monthlyChart) {
+                    window.monthlyChart.destroy();
+                }
+                
+                // Get current month data for all group members
+                const today = new Date();
+                const currentMonth = today.getMonth();
+                const currentYear = today.getFullYear();
+                
+                // Get the first and last day of the current month
+                const firstDay = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+                const lastDay = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+                
+                // Get monthly totals for each user in the group
+                const monthlyTotals = [];
+                
+                currentGroup.members.forEach(memberId => {
+                    const user = users.find(u => u.id === memberId);
+                    if (!user) return;
+                    
+                    // Get all entries for this user in the current month
+                    const userEntries = stepData.filter(entry => 
+                        entry.userId === memberId && 
+                        entry.date >= firstDay && 
+                        entry.date <= lastDay
+                    );
+                    
+                    // Calculate average steps
+                    const totalSteps = userEntries.reduce((sum, entry) => sum + entry.steps, 0);
+                    const avgSteps = userEntries.length > 0 ? Math.round(totalSteps / userEntries.length) : 0;
+                    
+                    monthlyTotals.push({
+                        userId: memberId,
+                        username: user.username,
+                        avgSteps: avgSteps,
+                        daysLogged: userEntries.length
+                    });
+                });
+                
+                // Sort by average steps (descending)
+                monthlyTotals.sort((a, b) => b.avgSteps - a.avgSteps);
+                
+                // Prepare data for chart
+                const labels = monthlyTotals.map(item => item.username);
+                
+                // Create medal icons for labels
+                const labelWithMedals = labels.map((label, index) => {
+                    if (index === 0) return '👑 ' + label;  // Crown for first place
+                    if (index === 1) return '🥈 ' + label;  // Silver medal for second place
+                    if (index === 2) return '🥉 ' + label;  // Bronze medal for third place
+                    return label;
+                });
+                
+                const data = monthlyTotals.map(item => item.avgSteps);
+                
+                console.log("Monthly data:", data);
+                console.log("Monthly labels:", labelWithMedals);
+                
+                // Create new chart
+                window.monthlyChart = new Chart(monthlyChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labelWithMedals,
+                        datasets: [{
+                            label: '本月平均步数',
+                            data: data,
+                            backgroundColor: backgroundColors,
+                            borderColor: backgroundColors.map(color => color.replace('0.7', '1')),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Horizontal bar chart
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(200, 200, 200, 0.2)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value >= 1000000) {
+                                            return (value / 1000000).toFixed(1) + 'M';
+                                        } else if (value >= 1000) {
+                                            return (value / 1000).toFixed(0) + 'K';
+                                        }
+                                        return value;
+                                    },
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const index = context.dataIndex;
+                                        const daysLogged = monthlyTotals[index].daysLogged;
+                                        return `平均: ${context.parsed.x.toLocaleString()} 步/天 (${daysLogged} 天)`;
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                align: 'end',
+                                anchor: 'end',
+                                formatter: function(value, context) {
+                                    return value.toLocaleString();
+                                },
+                                font: {
+                                    weight: 'bold'
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    line1: {
+                                        type: 'line',
+                                        xMin: 10000,
+                                        xMax: 10000,
+                                        borderColor: 'rgba(128, 128, 128, 0.7)',
+                                        borderWidth: 2,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            enabled: true,
+                                            content: '10,000 步',
+                                            position: 'top',
+                                            backgroundColor: 'rgba(128, 128, 128, 0.7)',
+                                            font: {
+                                                size: 12
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
+            }
+
+            // Initialize the app
+            init();
+        });
+    </script>
+</body>
+</html>
