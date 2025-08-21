@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>步数统计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-height: 100vh;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .input-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        .step-input {
+            display: flex;
+            gap: 10px;
+        }
+        .step-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            position: relative;
+        }
+        .tab-btn.active {
+            color: #4CAF50;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #4CAF50;
+        }
+        .tab-content {
+            display: none;
+            padding: 10px 0;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .ranking-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .rank-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        .rank-position {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ddd;
+            color: #666;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        .position-1 {
+            background-color: #FFD700;
+            color: #333;
+        }
+        .position-2 {
+            background-color: #C0C0C0;
+            color: #333;
+        }
+        .position-3 {
+            background-color: #CD7F32;
+            color: #fff;
+        }
+        .rank-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        .rank-steps {
+            font-weight: 600;
+            color: #4CAF50;
+        }
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>步数统计</h1>
+            <div class="user-info">
+                <span id="username">User</span>
+                <button id="logout-btn" onclick="handleLogout()">退出</button>
+            </div>
+        </header>
+
+        <div class="input-section">
+            <h2>今日步数</h2>
+            <div class="step-input">
+                <input type="number" id="step-count" placeholder="输入步数">
+                <button id="submit-steps" onclick="updateSteps()">更新</button>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <h2>小组数据</h2>
+            <div class="tab-container">
+                <button class="tab-btn active" data-tab="daily" onclick="switchTab('daily')">今日排名</button>
+                <button class="tab-btn" data-tab="weekly" onclick="switchTab('weekly')">周数据</button>
+                <button class="tab-btn" data-tab="monthly" onclick="switchTab('monthly')">月均值</button>
+            </div>
+            
+            <div class="tab-content active" id="daily">
+                <div class="ranking-container" id="ranking-container">
+                    <!-- Ranking will be populated by JS -->
+                </div>
+            </div>
+            
+            <div class="tab-content" id="weekly">
+                <div class="chart-container">
+                    <canvas id="weekly-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="monthly">
+                <div class="chart-container">
+                    <canvas id="monthly-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <!-- Login Modal -->
+    <div class="modal active" id="login-modal">
+        <div class="modal-content">
+            <h2>登录 / 注册</h2>
+            <input type="text" id="login-username" placeholder="用户名">
+            <input type="password" id="login-password" placeholder="密码">
+            <div class="modal-buttons">
+                <button id="login-btn" onclick="simpleLogin()">登录</button>
+                <button id="register-btn" onclick="simpleRegister()">注册</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Modal -->
+    <div class="modal" id="group-modal">
+        <div class="modal-content">
+            <h2>加入或创建小组</h2>
+            <input type="text" id="group-code" placeholder="输入小组代码">
+            <div class="modal-buttons">
+                <button id="join-group-btn" onclick="handleJoinGroup()">加入小组</button>
+                <button id="create-group-btn" onclick="handleCreateGroup()">创建新小组</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data
+        const users = [
+            { id: 1, username: '冉启兵', password: 'pass1' },
+            { id: 2, username: '冉理', password: 'pass2' },
+            { id: 3, username: '冉荣', password: 'pass3' }
+        ];
+
+        const groups = [
+            { 
+                id: 1, 
+                name: '步数小组', 
+                code: 'STEP123',
+                members: [1, 2, 3]
+            }
+        ];
+
+        // Generate sample step data
+        function generateSampleData() {
+            const data = [];
+            const today = new Date();
+            
+            for (let i = 0; i < 30; i++) {
+                const date = new Date();
+                date.setDate(today.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                // User 1 data
+                data.push({
+                    userId: 1,
+                    date: dateStr,
+                    steps: Math.floor(Math.random() * 15000) + 5000
+                });
+                
+                // User 2 data
+                data.push({
+                    userId: 2,
+                    date: dateStr,
+                    steps: Math.floor(Math.random() * 20000) + 5000
+                });
+                
+                // User 3 data
+                data.push({
+                    userId: 3,
+                    date: dateStr,
+                    steps: Math.floor(Math.random() * 25000) + 5000
+                });
+            }
+            
+            return data;
+        }
+
+        let stepData = generateSampleData();
+        let currentUser = null;
+        let currentGroup = null;
+
+        // Simple login function
+        function simpleLogin() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!username || !password) {
+                alert('请输入用户名和密码');
+                return;
+            }
+            
+            // Find user
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                document.getElementById('username').textContent = user.username;
+                document.getElementById('login-modal').classList.remove('active');
+                
+                // Find user's group
+                const userGroup = groups.find(g => g.members && g.members.includes(user.id));
+                if (userGroup) {
+                    currentGroup = userGroup;
+                    updateDashboard();
+                } else {
+                    document.getElementById('group-modal').classList.add('active');
+                }
+            } else {
+                alert('用户名或密码错误');
+            }
+        }
+
+        // Simple register function
+        function simpleRegister() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!username || !password) {
+                alert('请输入用户名和密码');
+                return;
+            }
+            
+            // Check if username already exists
+            if (users.some(u => u.username === username)) {
+                alert('用户名已存在');
+                return;
+            }
+            
+            // Create new user
+            const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+            const newUser = { id: newId, username, password };
+            users.push(newUser);
+            
+            // Update current user
+            currentUser = newUser;
+            document.getElementById('username').textContent = newUser.username;
+            
+            // Show group modal
+            document.getElementById('login-modal').classList.remove('active');
+            document.getElementById('group-modal').classList.add('active');
+            
+            alert('注册成功！请加入或创建一个小组。');
+        }
+
+        // Handle logout
+        function handleLogout() {
+            currentUser = null;
+            currentGroup = null;
+            document.getElementById('username').textContent = 'User';
+            document.getElementById('login-modal').classList.add('active');
+        }
+
+        // Handle join group
+        function handleJoinGroup() {
+            if (!currentUser) {
+                alert('请先登录');
+                document.getElementById('login-modal').classList.add('active');
+                return;
+            }
+            
+            const groupCode = document.getElementById('group-code').value;
+            
+            if (!groupCode) {
+                alert('请输入小组代码');
+                return;
+            }
+            
+            // Find group by code
+            const group = groups.find(g => g.code === groupCode);
+            
+            if (group) {
+                // Initialize members array if it doesn't exist
+                if (!group.members) {
+                    group.members = [];
+                }
+                
+                // Add user to group if not already a member
+                if (!group.members.includes(currentUser.id)) {
+                    group.members.push(currentUser.id);
+                }
+                
+                currentGroup = group;
+                document.getElementById('group-modal').classList.remove('active');
+                alert(`成功加入小组: ${group.name}`);
+                updateDashboard();
+            } else {
+                alert('小组代码无效');
+            }
+        }
+
+        // Handle create group
+        function handleCreateGroup() {
+            if (!currentUser) {
+                alert('请先登录');
+                document.getElementById('login-modal').classList.add('active');
+                return;
+            }
+            
+            // Generate unique group ID and code
+            const newGroupId = groups.length > 0 ? Math.max(...groups.map(g => g.id)) + 1 : 1;
+            const newGroupCode = 'G' + Math.floor(1000 + Math.random() * 9000);
+            
+            // Create new group
+            const newGroup = {
+                id: newGroupId,
+                name: '小组 ' + newGroupId,
+                code: newGroupCode,
+                members: [currentUser.id]
+            };
+            
+            // Add new group
+            groups.push(newGroup);
+            
+            // Update current group
+            currentGroup = newGroup;
+            document.getElementById('group-modal').classList.remove('active');
+            alert(`小组创建成功！\n\n您的小组代码是: ${newGroupCode}\n\n请与组员分享此代码，让他们加入您的小组。`);
+            updateDashboard();
+        }
+
+        // Get activity level based on step count
+        function getActivityLevel(steps) {
+            if (steps < 5000) {
+                return { level: '久坐不动型', color: '#FF5252' };
+            } else if (steps < 10000) {
+                return { level: '轻度活动型', color: '#FFC107' };
+            } else if (steps <= 12500) {
+                return { level: '活跃型', color: '#4CAF50' };
+            } else {
+                return { level: '高度活跃型', color: '#2196F3' };
+            }
+        }
+
+        // Update steps
+        function updateSteps() {
+            if (!currentUser) {
+                alert('请先登录');
+                document.getElementById('login-modal').classList.add('active');
+                return;
+            }
+            
+            // Get steps from input
+            const stepsInput = document.getElementById('step-count');
+            const steps = parseInt(stepsInput.value);
+            
+            if (isNaN(steps) || steps < 0) {
+                alert('请输入有效的步数');
+                return;
+            }
+            
+            // Get today's date
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Create a new step data entry
+            const newStepData = {
+                userId: currentUser.id,
+                date: today,
+                steps: steps
+            };
+            
+            // Check if there's already an entry for today
+            const existingEntryIndex = stepData.findIndex(
+                entry => entry.userId === currentUser.id && entry.date === today
+            );
+            
+            if (existingEntryIndex !== -1) {
+                stepData[existingEntryIndex] = newStepData;
+            } else {
+                stepData.push(newStepData);
+            }
+            
+            // Get activity level
+            const activityInfo = getActivityLevel(steps);
+            
+            // Create activity level message
+            const message = `步数更新成功！\n\n活动水平: ${activityInfo.level}`;
+            alert(message);
+            
+            // Clear input field
+            stepsInput.value = '';
+            
+            // Update the dashboard
+            updateDashboard();
+        }
+
+        // Switch tab
+        function switchTab(tabId) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(button => {
+                if (button.dataset.tab === tabId) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+            
+            // Update tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                if (content.id === tabId) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+        }
+
+        // Update dashboard
+        function updateDashboard() {
+            if (!currentUser || !currentGroup) {
+                return;
+            }
+            
+            renderRankings();
+            renderWeeklyChart();
+            renderMonthlyChart();
+        }
+        
+        // Render weekly chart
+        function renderWeeklyChart() {
+            const weeklyChartCanvas = document.getElementById('weekly-chart');
+            if (!weeklyChartCanvas) return;
+            
+            // Get dates for the past 7 days
+            const dates = [];
+            const today = new Date();
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(today.getDate() - i);
+                dates.push(date.toISOString().split('T')[0]);
+            }
+            
+            // Get step data for each group member for the past 7 days
+            const datasets = [];
+            const colors = ['#4CAF50', '#2196F3', '#FFC107', '#9C27B0', '#FF5722'];
+            
+            currentGroup.members.forEach((memberId, index) => {
+                const user = users.find(u => u.id === memberId);
+                if (!user) return;
+                
+                const memberData = dates.map(date => {
+                    const entry = stepData.find(e => e.userId === memberId && e.date === date);
+                    return entry ? entry.steps : 0;
+                });
+                
+                datasets.push({
+                    label: user.username,
+                    data: memberData,
+                    borderColor: colors[index % colors.length],
+                    backgroundColor: colors[index % colors.length] + '20',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                });
+            });
+            
+            // Destroy previous chart if it exists
+            if (window.weeklyChart) {
+                window.weeklyChart.destroy();
+            }
+            
+            // Create new chart
+            window.weeklyChart = new Chart(weeklyChartCanvas, {
+                type: 'line',
+                data: {
+                    labels: dates.map(date => {
+                        const d = new Date(date);
+                        return `${d.getMonth() + 1}/${d.getDate()}`;
+                    }),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '步数'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '日期'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Render monthly chart
+        function renderMonthlyChart() {
+            const monthlyChartCanvas = document.getElementById('monthly-chart');
+            if (!monthlyChartCanvas) return;
+            
+            // Get dates for the past 30 days
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 29);
+            
+            // Calculate average steps for each user in the past 30 days
+            const userAverages = [];
+            
+            currentGroup.members.forEach(memberId => {
+                const user = users.find(u => u.id === memberId);
+                if (!user) return;
+                
+                // Get all step entries for this user in the past 30 days
+                const userEntries = stepData.filter(entry => {
+                    try {
+                        const entryDate = new Date(entry.date);
+                        return entry.userId === memberId && 
+                               entryDate >= thirtyDaysAgo && 
+                               entryDate <= today;
+                    } catch (error) {
+                        return false;
+                    }
+                });
+                
+                // Calculate average
+                const totalSteps = userEntries.reduce((sum, entry) => sum + entry.steps, 0);
+                const avgSteps = userEntries.length > 0 ? Math.round(totalSteps / userEntries.length) : 0;
+                
+                userAverages.push({
+                    username: user.username,
+                    avgSteps: avgSteps
+                });
+            });
+            
+            // Sort by average steps (descending)
+            userAverages.sort((a, b) => b.avgSteps - a.avgSteps);
+            
+            // Destroy previous chart if it exists
+            if (window.monthlyChart) {
+                window.monthlyChart.destroy();
+            }
+            
+            // Create new chart
+            window.monthlyChart = new Chart(monthlyChartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: userAverages.map(u => u.username),
+                    datasets: [{
+                        label: '月平均步数',
+                        data: userAverages.map(u => u.avgSteps),
+                        backgroundColor: [
+                            '#4CAF50',
+                            '#2196F3',
+                            '#FFC107',
+                            '#9C27B0',
+                            '#FF5722'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `平均步数: ${context.raw.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '平均步数'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '用户'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render rankings
+        function renderRankings() {
+            const rankingContainer = document.getElementById('ranking-container');
+            if (!rankingContainer) return;
+            
+            rankingContainer.innerHTML = '';
+            
+            // Get today's date
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Get today's steps for group members
+            const groupSteps = stepData
+                .filter(entry => {
+                    return currentGroup.members.includes(entry.userId) && entry.date === today;
+                })
+                .sort((a, b) => b.steps - a.steps);
+            
+            // Create ranking items
+            groupSteps.forEach((entry, index) => {
+                const user = users.find(u => u.id === entry.userId);
+                if (!user) return;
+                
+                const rankItem = document.createElement('div');
+                rankItem.className = 'rank-item';
+                
+                const position = document.createElement('div');
+                position.className = `rank-position position-${index + 1}`;
+                position.textContent = index + 1;
+                
+                const name = document.createElement('div');
+                name.className = 'rank-name';
+                name.textContent = user.username;
+                
+                const steps = document.createElement('div');
+                steps.className = 'rank-steps';
+                steps.textContent = entry.steps.toLocaleString() + ' 步';
+                
+                rankItem.appendChild(position);
+                rankItem.appendChild(name);
+                rankItem.appendChild(steps);
+                
+                rankingContainer.appendChild(rankItem);
+            });
+            
+            // If no data for today, show a message
+            if (groupSteps.length === 0) {
+                const noDataMsg = document.createElement('div');
+                noDataMsg.textContent = '今日暂无步数数据';
+                noDataMsg.style.textAlign = 'center';
+                noDataMsg.style.padding = '20px';
+                noDataMsg.style.color = '#666';
+                rankingContainer.appendChild(noDataMsg);
+            }
+        }
+    </script>
+</body>
+</html>
