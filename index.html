@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>步数统计</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>步数统计</h1>
+            <div class="user-info">
+                <span id="username">User</span>
+                <button id="logout-btn" class="icon-btn">🚪</button>
+            </div>
+        </header>
+
+        <div class="input-section">
+            <h2>今日步数</h2>
+            <div class="step-input">
+                <input type="number" id="step-count" placeholder="输入步数">
+                <button id="submit-steps">更新</button>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <h2>小组数据</h2>
+            <div class="tab-container">
+                <button class="tab-btn active" data-tab="daily">今日排名</button>
+                <button class="tab-btn" data-tab="weekly">周数据</button>
+                <button class="tab-btn" data-tab="monthly">月均值</button>
+            </div>
+            
+            <div class="tab-content active" id="daily">
+                <div class="ranking-container">
+                    <!-- Ranking will be populated by JS -->
+                </div>
+            </div>
+            
+            <div class="tab-content" id="weekly">
+                <div class="chart-container">
+                    <canvas id="weekly-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="monthly">
+                <div class="chart-container">
+                    <canvas id="monthly-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Removed group members section as requested -->
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="login-modal">
+        <div class="modal-content">
+            <h2>登录 / 注册</h2>
+            <input type="text" id="login-username" placeholder="用户名">
+            <input type="password" id="login-password" placeholder="密码">
+            <div class="modal-buttons">
+                <button id="login-btn">登录</button>
+                <button id="register-btn">注册</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Modal -->
+    <div class="modal" id="group-modal">
+        <div class="modal-content">
+            <h2>加入或创建小组</h2>
+            <input type="text" id="group-code" placeholder="输入小组代码">
+            <div class="modal-buttons">
+                <button id="join-group-btn">加入小组</button>
+                <button id="create-group-btn">创建新小组</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- Chart.js and plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script>
+        // Register the plugins
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                Chart.register(ChartDataLabels);
+                if (typeof ChartAnnotation !== 'undefined') {
+                    Chart.register(ChartAnnotation);
+                }
+                console.log("Chart.js plugins registered successfully");
+            } catch (error) {
+                console.error("Error registering plugins:", error);
+            }
+        });
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
